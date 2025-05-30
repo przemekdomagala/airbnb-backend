@@ -1,0 +1,66 @@
+# hosts/views.py
+from rest_framework import viewsets, filters
+from .models import Host
+from .models import HostBooking
+from .models import HostAvailability
+from .models import HostMessage
+from .models import HostPromotion
+from .models import HostStatistics
+from .models import HostEarnings
+from .models import HostReservationPolicy
+from .models import HostNotification
+from .models import HostSupport
+from .serializers import HostSerializer
+from .serializers import HostAvailability
+from .serializers import HostAvailabilitySerializer
+from .serializers import HostBookingSerializer
+from .serializers import HostMessageSerializer
+from .serializers import HostPromotionSerializer
+from .serializers import HostStatisticsSerializer
+from .serializers import HostEarningsSerializer
+from .serializers import HostReservationPolicySerializer
+from .serializers import HostNotificationSerializer
+from .serializers import HostSupportSerializer
+
+class HostViewSet(viewsets.ModelViewSet):
+    queryset = Host.objects.all()
+    serializer_class = HostSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['location']
+
+class HostAvailabilityViewSet(viewsets.ModelViewSet):
+    queryset = HostAvailability.objects.all()
+    serializer_class = HostAvailabilitySerializer
+
+class HostBookingViewSet(viewsets.ModelViewSet):
+    queryset = HostBooking.objects.all()
+    serializer_class = HostBookingSerializer
+
+class HostMessageViewSet(viewsets.ModelViewSet):
+    queryset = HostMessage.objects.all()
+    serializer_class = HostMessageSerializer
+
+class HostPromotionViewSet(viewsets.ModelViewSet):
+    queryset = HostPromotion.objects.all()
+    serializer_class = HostPromotionSerializer
+
+class HostStatisticsViewSet(viewsets.ModelViewSet):
+    queryset = HostStatistics.objects.all()
+    serializer_class = HostStatisticsSerializer
+
+class HostEarningsViewSet(viewsets.ModelViewSet):
+    queryset = HostEarnings.objects.all()
+    serializer_class = HostEarningsSerializer
+
+class HostReservationPolicyViewSet(viewsets.ModelViewSet):
+    queryset = HostReservationPolicy.objects.all()
+    serializer_class = HostReservationPolicySerializer
+
+
+class HostNotificationViewSet(viewsets.ModelViewSet):
+    queryset = HostNotification.objects.all()
+    serializer_class = HostNotificationSerializer
+
+class HostSupportViewSet(viewsets.ModelViewSet):
+    queryset = HostSupport.objects.all()
+    serializer_class = HostSupportSerializer
