@@ -10,6 +10,9 @@ from .models import HostEarnings
 from .models import HostReservationPolicy
 from .models import HostNotification
 from .models import HostSupport
+from .models import HostManager
+from .models import HostProfile
+from .models import HostFeedback
 
 class HostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -64,4 +67,22 @@ class HostNotificationSerializer(serializers.ModelSerializer):
 class HostSupportSerializer(serializers.ModelSerializer):
     class Meta:
         model = HostSupport
+        fields = '__all__'
+
+
+class HostManagerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostManager
+        fields = '__all__'
+
+
+class HostProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostProfile
+        fields = '__all__'
+
+
+class HostFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostFeedback
         fields = '__all__'

@@ -10,6 +10,9 @@ from .models import HostEarnings
 from .models import HostReservationPolicy
 from .models import HostNotification
 from .models import HostSupport
+from .models import HostManager
+from .models import HostProfile
+from .models import HostFeedback
 from .serializers import HostSerializer
 from .serializers import HostAvailability
 from .serializers import HostAvailabilitySerializer
@@ -21,6 +24,9 @@ from .serializers import HostEarningsSerializer
 from .serializers import HostReservationPolicySerializer
 from .serializers import HostNotificationSerializer
 from .serializers import HostSupportSerializer
+from .serializers import HostManagerSerializer
+from .serializers import HostProfileSerializer
+from .serializers import HostFeedbackSerializer
 
 class HostViewSet(viewsets.ModelViewSet):
     queryset = Host.objects.all()
@@ -64,3 +70,15 @@ class HostNotificationViewSet(viewsets.ModelViewSet):
 class HostSupportViewSet(viewsets.ModelViewSet):
     queryset = HostSupport.objects.all()
     serializer_class = HostSupportSerializer
+
+class HostManagerViewSet(viewsets.ModelViewSet):
+    queryset = HostManager.objects.all()
+    serializer_class = HostManagerSerializer
+
+class HostProfileViewSet(viewsets.ModelViewSet):
+    queryset = HostProfile.objects.all()
+    serializer_class = HostProfileSerializer
+
+class HostFeedbackViewSet(viewsets.ModelViewSet):
+    queryset = HostFeedback.objects.all()
+    serializer_class = HostFeedbackSerializer

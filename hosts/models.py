@@ -1,14 +1,20 @@
 # hosts/models.py
 from django.db import models
+from datetime import date
+
+HOST_TYPES = [('individual', 'Individual'), ('corporate', 'Corporate')]
 
 class Host(models.Model):
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     rating = models.FloatField(default=0.0)
     image = models.URLField()
+    host_type = models.CharField(max_length=20, choices=HOST_TYPES, default='individual')
+    registration_date = models.DateField(default=date.today)
 
     def __str__(self):
         return f"{self.name} ({self.location})"
+
 
 class HostAvailability(models.Model):
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='availabilities')
@@ -88,3 +94,30 @@ class HostSupport(models.Model):
 
     def __str__(self):
         return f"Support for {self.host.name} – {self.status}"
+
+class HostManager(models.Model):
+    user_id = models.IntegerField()
+    managed_hosts = models.ManyToManyField('Host', related_name='managers')
+
+    def __str__(self):
+        return f"Manager {self.user_id}"
+
+
+class HostProfile(models.Model):
+    host = models.OneToOneField('Host', on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True)
+    avatar = models.URLField(blank=True)
+
+    def __str__(self):
+        return f"Profile of {self.host.name}"
+
+
+class HostFeedback(models.Model):
+    host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='feedback')
+    user_id = models.IntegerField()
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback from {self.user_id} to {self.host.name}"
