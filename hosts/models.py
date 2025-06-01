@@ -1,10 +1,10 @@
-# hosts/models.py
 from django.db import models
 from datetime import date
 
 HOST_TYPES = [('individual', 'Individual'), ('corporate', 'Corporate')]
 
 class Host(models.Model):
+    user_id = models.IntegerField(default=0)
     name = models.CharField(max_length=100)
     location = models.CharField(max_length=100)
     rating = models.FloatField(default=0.0)
@@ -23,7 +23,8 @@ class HostAvailability(models.Model):
 
     def __str__(self):
         return f"{self.host.name}: {self.start_date} – {self.end_date}"
-    
+
+
 class HostBooking(models.Model):
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='bookings')
     reservation_id = models.IntegerField()
@@ -31,7 +32,8 @@ class HostBooking(models.Model):
 
     def __str__(self):
         return f"Booking {self.reservation_id} for {self.host.name} on {self.booking_date}"
-    
+
+
 class HostMessage(models.Model):
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='messages')
     user_id = models.IntegerField()
@@ -40,7 +42,8 @@ class HostMessage(models.Model):
 
     def __str__(self):
         return f"Msg to {self.user_id} from {self.host.name}"
-    
+
+
 class HostPromotion(models.Model):
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='promotions')
     promotion_details = models.TextField()
@@ -50,6 +53,7 @@ class HostPromotion(models.Model):
     def __str__(self):
         return f"Promotion for {self.host.name}: {self.start_date} – {self.end_date}"
 
+
 class HostStatistics(models.Model):
     host = models.OneToOneField('Host', on_delete=models.CASCADE, related_name='statistics')
     total_reservations = models.IntegerField(default=0)
@@ -57,6 +61,7 @@ class HostStatistics(models.Model):
 
     def __str__(self):
         return f"Stats for {self.host.name}"
+
 
 class HostEarnings(models.Model):
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='earnings')
@@ -66,12 +71,14 @@ class HostEarnings(models.Model):
     def __str__(self):
         return f"{self.host.name}: {self.earnings_amount} zł on {self.earnings_date}"
 
+
 class HostReservationPolicy(models.Model):
     host = models.OneToOneField('Host', on_delete=models.CASCADE, related_name='reservation_policy')
     cancellation_policy = models.TextField()
 
     def __str__(self):
         return f"Policy for {self.host.name}"
+
 
 class HostNotification(models.Model):
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='notifications')
@@ -81,19 +88,20 @@ class HostNotification(models.Model):
     def __str__(self):
         return f"{self.notification_type} → {self.host.name}"
 
+
 class HostSupport(models.Model):
     STATUS_CHOICES = [
         ('new', 'Nowe'),
         ('in_progress', 'W trakcie'),
         ('closed', 'Zamknięte'),
     ]
-
     host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='support_tickets')
     issue_description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
 
     def __str__(self):
         return f"Support for {self.host.name} – {self.status}"
+
 
 class HostManager(models.Model):
     user_id = models.IntegerField()
@@ -121,3 +129,37 @@ class HostFeedback(models.Model):
 
     def __str__(self):
         return f"Feedback from {self.user_id} to {self.host.name}"
+
+
+class IndividualHost(models.Model):
+    host = models.OneToOneField('Host', on_delete=models.CASCADE, related_name='individual_details')
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+class CorporateHost(models.Model):
+    host = models.OneToOneField('Host', on_delete=models.CASCADE, related_name='corporate_details')
+    company_name = models.CharField(max_length=100)
+    company_address = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.company_name
+
+class HostRating(models.Model):
+    host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='ratings')
+    rating_score = models.DecimalField(max_digits=4, decimal_places=2)
+
+    def __str__(self):
+        return f"Rating {self.rating_score} for {self.host.name}"
+
+
+class HostReview(models.Model):
+    host = models.ForeignKey('Host', on_delete=models.CASCADE, related_name='reviews')
+    user_id = models.IntegerField()
+    rating = models.PositiveSmallIntegerField()
+    review_text = models.TextField()
+
+    def __str__(self):
+        return f"Review by user {self.user_id} for {self.host.name}"

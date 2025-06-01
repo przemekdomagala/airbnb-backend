@@ -13,6 +13,10 @@ from .models import HostSupport
 from .models import HostManager
 from .models import HostProfile
 from .models import HostFeedback
+from .models import IndividualHost
+from .models import CorporateHost
+from .models import HostRating
+from .models import HostReview
 from .serializers import HostSerializer
 from .serializers import HostAvailability
 from .serializers import HostAvailabilitySerializer
@@ -27,6 +31,10 @@ from .serializers import HostSupportSerializer
 from .serializers import HostManagerSerializer
 from .serializers import HostProfileSerializer
 from .serializers import HostFeedbackSerializer
+from .serializers import IndividualHostSerializer
+from .serializers import CorporateHostSerializer
+from .serializers import HostRatingSerializer
+from .serializers import HostReviewSerializer
 
 class HostViewSet(viewsets.ModelViewSet):
     queryset = Host.objects.all()
@@ -82,3 +90,19 @@ class HostProfileViewSet(viewsets.ModelViewSet):
 class HostFeedbackViewSet(viewsets.ModelViewSet):
     queryset = HostFeedback.objects.all()
     serializer_class = HostFeedbackSerializer
+
+class IndividualHostViewSet(viewsets.ModelViewSet):
+    queryset = IndividualHost.objects.all()
+    serializer_class = IndividualHostSerializer
+
+class CorporateHostViewSet(viewsets.ModelViewSet):
+    queryset = CorporateHost.objects.all()
+    serializer_class = CorporateHostSerializer
+
+class HostRatingViewSet(viewsets.ModelViewSet):
+    queryset = HostRating.objects.all()
+    serializer_class = HostRatingSerializer
+
+class HostReviewViewSet(viewsets.ModelViewSet):
+    queryset = HostReview.objects.all()
+    serializer_class = HostReviewSerializer

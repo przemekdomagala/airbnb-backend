@@ -13,6 +13,10 @@ from .models import HostSupport
 from .models import HostManager
 from .models import HostProfile
 from .models import HostFeedback
+from .models import IndividualHost
+from .models import CorporateHost
+from .models import HostRating
+from .models import HostReview
 
 class HostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -85,4 +89,24 @@ class HostProfileSerializer(serializers.ModelSerializer):
 class HostFeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = HostFeedback
+        fields = '__all__'
+
+class IndividualHostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IndividualHost
+        fields = '__all__'
+
+class CorporateHostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CorporateHost
+        fields = '__all__'
+
+class HostRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostRating
+        fields = '__all__'
+
+class HostReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HostReview
         fields = '__all__'
