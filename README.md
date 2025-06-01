@@ -1,10 +1,9 @@
-# 🧩 Dokumentacja API – Moduł Gospodarzy (DreamBook)
+# API – Moduł Gospodarzy (DreamBook)
 
-Backend systemu rezerwacji DreamBook – moduł Gospodarzy. Poniżej znajduje się dokumentacja REST API dla wszystkich zasobów tego modułu.
-
+Backend systemu rezerwacji DreamBook – moduł Gospodarzy. 
 ---
 
-## 🔗 Endpointy
+## Endpointy
 
 ### 1. Gospodarze (Hosts)
 - `GET /api/hosts/` – lista gospodarzy
@@ -122,25 +121,18 @@ Backend systemu rezerwacji DreamBook – moduł Gospodarzy. Poniżej znajduje si
 
 ---
 
-## 🧪 Testowanie
-Możesz testować wszystkie endpointy:
-- przez przeglądarkę (Django REST Framework UI)
-- przez Postman / curl
-- lub za pomocą `python manage.py test hosts`
+## Testowanie
+- `python manage.py test hosts`
 
 ---
 
-## 📌 Uwagi
-- Wszystkie dane są obsługiwane przez Django REST Framework `ModelViewSet`
-- Wszystkie endpointy wspierają `GET`, `POST`, `PUT`, `DELETE` (o ile nie zaznaczono inaczej)
-
-# 🗺️ Dokumentacja API – Moduł Mapy (DreamBook)
+# API – Moduł Mapy
 
 Backend systemu DreamBook – funkcje obsługujące interaktywną mapę i lokalizacje.
 
 ---
 
-## 🔗 Endpointy
+## Endpointy
 
 ### 1. Lokalizacje (`Location`)
 - `GET /api/locations/`
@@ -199,16 +191,6 @@ Backend systemu DreamBook – funkcje obsługujące interaktywną mapę i lokali
 
 ---
 
-## 🧪 Testowanie
+## Testowanie
 
-- Interfejs REST: `/api/*`
-- W pełni kompatybilne z Postman / curl / przeglądarką DRF
-- Wspiera `GET`, `POST`, `PUT`, `DELETE` (gdzie dotyczy)
-
----
-
-## 📌 Uwagi
-
-- Wszystkie modele powiązane z `Location`
-- Obsługiwane przez `ModelViewSet` (Django REST Framework)
-- Możliwość rozszerzenia o warstwy map, filtry, clustering
+- `python manage.py test map`
