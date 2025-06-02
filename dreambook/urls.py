@@ -14,10 +14,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, reverse
+from django.views.generic import RedirectView
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+def api_root(request, format=None):
+    return Response({
+        'reservations': reverse('reservation-list-create', request=request),
+        'reviews':      reverse('review-list-create',  request=request),
+    })
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('hosts.urls')),
     path('api/', include('map.urls')),
+    path('api/', include('accounts.urls')),
+    path('api/', include('filtering_sorting.urls')),
+    path('api/', include('listings.urls')),
+    path('api/reservations/', include('reservations.urls')),
+    path('api/reviews', include('reviews.urls')),
+    path('api/', include('user_management.urls')),
+    path('', RedirectView.as_view(
+        url='/api/reservations/', permanent=False
+    )),
 ]
