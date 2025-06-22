@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'hosts',
     'rest_framework',
     'map',
+    'dreambook',
     "corsheaders",
     "rest_framework.authtoken",
     "accounts",
