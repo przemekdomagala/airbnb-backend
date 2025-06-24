@@ -1,9 +1,9 @@
 from django.db import models
 from django.conf import settings
-from reservations.models import Reservation
+from listings.models import Listing
 
 class Review(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     rating = models.PositiveSmallIntegerField()
     text = models.TextField()

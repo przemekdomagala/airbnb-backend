@@ -1,28 +1,8 @@
 from django.db import models
 from django.conf import settings
-from django.utils import timezone
+from listings.models import Listing
+import uuid
 
-class Property(models.Model):
-    title = models.CharField(max_length=200)
-    address = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-
-class CancellationPolicy(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    refundable_until = models.DurationField()
-
-class SpecialOffer(models.Model):
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    discount_percent = models.DecimalField(max_digits=5, decimal_places=2)
-    start_date = models.DateField()
-    end_date = models.DateField()
-
-class GroupReservation(models.Model):
-    leader = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='group_participants')
-    created_at = models.DateTimeField(auto_now_add=True)
 
 class Reservation(models.Model):
     STATUS_CHOICES = [
@@ -31,76 +11,150 @@ class Reservation(models.Model):
         ('cancelled', 'Cancelled'),
         ('completed', 'Completed'),
     ]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
-    group = models.ForeignKey(GroupReservation, on_delete=models.SET_NULL, null=True, blank=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('refunded', 'Refunded'),
+        ('failed', 'Failed'),
+    ]
+
+    # Basic reservation info
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    confirmation_number = models.CharField(max_length=20, unique=True, blank=True)
+    
+    # Relations
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reservations')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='reservations')
+    
+    # Dates and guests
+    check_in = models.DateField()
+    check_out = models.DateField()
+    guests_adults = models.PositiveIntegerField(default=1)
+    guests_children = models.PositiveIntegerField(default=0)
+    total_nights = models.PositiveIntegerField()
+    
+    # Guest information (from step 1 of booking)
+    guest_first_name = models.CharField(max_length=100)
+    guest_last_name = models.CharField(max_length=100)
+    guest_email = models.EmailField()
+    guest_phone = models.CharField(max_length=20)
+    special_requests = models.TextField(blank=True, null=True)
+    
+    # Pricing
+    price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    taxes_and_fees = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Status and timestamps
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Payment method info (from step 2)
+    payment_method = models.CharField(max_length=20, choices=[('card', 'Card'), ('paypal', 'PayPal')], default='card')
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['listing', 'check_in', 'check_out']),
+            models.Index(fields=['confirmation_number']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        if not self.confirmation_number:
+            self.confirmation_number = self.generate_confirmation_number()
+        if not self.total_nights:
+            self.total_nights = (self.check_out - self.check_in).days
+        super().save(*args, **kwargs)
+    
+    def generate_confirmation_number(self):
+        import random
+        import string
+        return 'DB' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    
+    def __str__(self):
+        return f"Reservation {self.confirmation_number} - {self.guest_first_name} {self.guest_last_name}"
 
-class ReservationDiscount(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
-    offer = models.ForeignKey(SpecialOffer, on_delete=models.CASCADE)
-    applied_at = models.DateTimeField(auto_now_add=True)
-
-class ReservationInvoice(models.Model):
-    reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=8, decimal_places=2)
-    issued_at = models.DateTimeField(auto_now_add=True)
 
 class ReservationPayment(models.Model):
-    reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE)
-    payment_id = models.CharField(max_length=255)
-    status = models.CharField(max_length=20)
+    """Payment details for reservations"""
+    PAYMENT_PROVIDER_CHOICES = [
+        ('stripe', 'Stripe'),
+        ('paypal', 'PayPal'),
+        ('blik', 'BLIK'),
+    ]
+    
+    reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE, related_name='payment')
+    payment_intent_id = models.CharField(max_length=200, blank=True, null=True)
+    payment_provider = models.CharField(max_length=20, choices=PAYMENT_PROVIDER_CHOICES, default='stripe')
+    
+    # Card info (masked for security)
+    card_last_four = models.CharField(max_length=4, blank=True, null=True)
+    card_brand = models.CharField(max_length=20, blank=True, null=True)
+    
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='PLN')
     paid_at = models.DateTimeField(null=True, blank=True)
-
-class ReservationNotification(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
-    message = models.TextField()
-    sent_at = models.DateTimeField(auto_now_add=True)
-
-class ReservationReminder(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
-    remind_at = models.DateTimeField()
-    sent = models.BooleanField(default=False)
-
-class ReservationExtension(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
-    new_end_date = models.DateField()
-    requested_at = models.DateTimeField(auto_now_add=True)
-
-class ReservationModification(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
-    changes = models.JSONField()
-    modified_at = models.DateTimeField(auto_now_add=True)
-
-class ReservationSupportTicket(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    subject = models.CharField(max_length=200)
-    message = models.TextField()
+    refunded_at = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
-    resolved = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Payment for {self.reservation.confirmation_number}"
 
-# Reporting and analytics
-class ReservationOccupancy(models.Model):
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
-    date = models.DateField()
-    occupancy_count = models.PositiveIntegerField()
 
-class RevenueReport(models.Model):
-    property = models.ForeignKey(Property, on_delete=models.CASCADE)
-    period_start = models.DateField()
-    period_end = models.DateField()
-    total_revenue = models.DecimalField(max_digits=10, decimal_places=2)
+class ReservationNote(models.Model):
+    """Internal notes for reservations"""
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='notes')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    note = models.TextField()
+    is_internal = models.BooleanField(default=True)  # False if visible to guest
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Note for {self.reservation.confirmation_number}"
 
-class UserActivity(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    activity = models.CharField(max_length=200)
-    timestamp = models.DateTimeField(auto_now_add=True)
 
-class UserNotificationPreferences(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    email_notifications = models.BooleanField(default=True)
-    sms_notifications = models.BooleanField(default=False)
+class ReservationStatusHistory(models.Model):
+    """Track status changes for reservations"""
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='status_history')
+    old_status = models.CharField(max_length=20)
+    new_status = models.CharField(max_length=20)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    reason = models.TextField(blank=True, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name_plural = "Reservation status histories"
+    
+    def __str__(self):
+        return f"{self.reservation.confirmation_number}: {self.old_status} → {self.new_status}"
+
+
+class AvailabilityBlock(models.Model):
+    """Track availability blocks to prevent double bookings"""
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='availability_blocks')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, null=True, blank=True)
+    is_blocked = models.BooleanField(default=False)  # Manual block by host
+    block_reason = models.CharField(max_length=200, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['start_date']
+        indexes = [
+            models.Index(fields=['listing', 'start_date', 'end_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.listing.title}: {self.start_date} - {self.end_date}"

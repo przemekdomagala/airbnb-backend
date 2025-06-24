@@ -1,23 +1,33 @@
 from django.urls import path
 from .views import (
-    PropertyListCreateAPIView, PropertyDetailAPIView,
-    SpecialOfferListCreateAPIView, SpecialOfferDetailAPIView,
-    ReservationListCreateAPIView, ReservationDetailAPIView, CancelReservationAPIView,
-    ReservationConfirmationAPIView, ReservationHistoryAPIView,
+    ReservationListCreateView, ReservationDetailView, ReservationByConfirmationView,
+    AvailabilityCheckView, ReservationCancelView, ReservationConfirmView,
+    user_reservation_history, landlord_reservations, AvailabilityBlockListCreateView,
+    BookingStepOneView, BookingStepTwoView, BookingStepThreeView
 )
-from .views import CheckAvailabilityAPIView
+
+app_name = 'reservations'
 
 urlpatterns = [
-    path('properties/', PropertyListCreateAPIView.as_view(), name='property-list-create'),
-    path('properties/<int:pk>/', PropertyDetailAPIView.as_view(), name='property-detail'),
-
-    path('offers/', SpecialOfferListCreateAPIView.as_view(), name='offer-list-create'),
-    path('offers/<int:pk>/', SpecialOfferDetailAPIView.as_view(), name='offer-detail'),
-
-    path('', ReservationListCreateAPIView.as_view(), name='reservation-list-create'),
-    path('<int:pk>/', ReservationDetailAPIView.as_view(), name='reservation-detail'),
-    path('<int:pk>/cancel/', CancelReservationAPIView.as_view(), name='reservation-cancel'),
-    path('<int:pk>/confirm/', ReservationConfirmationAPIView.as_view(), name='reservation-confirm'),
-    path('history/', ReservationHistoryAPIView.as_view(), name='reservation-history'),
-    path('availability/', CheckAvailabilityAPIView.as_view(), name='check-availability'),
+    # Main reservation endpoints
+    path('', ReservationListCreateView.as_view(), name='reservation-list-create'),
+    path('<uuid:id>/', ReservationDetailView.as_view(), name='reservation-detail'),
+    path('confirmation/<str:confirmation_number>/', ReservationByConfirmationView.as_view(), name='reservation-by-confirmation'),
+    
+    # Reservation actions
+    path('<uuid:reservation_id>/cancel/', ReservationCancelView.as_view(), name='reservation-cancel'),
+    path('<uuid:reservation_id>/confirm/', ReservationConfirmView.as_view(), name='reservation-confirm'),
+    
+    # History and management
+    path('history/', user_reservation_history, name='user-reservation-history'),
+    path('landlord/', landlord_reservations, name='landlord-reservations'),
+    
+    # Availability
+    path('availability/check/', AvailabilityCheckView.as_view(), name='availability-check'),
+    path('availability/blocks/', AvailabilityBlockListCreateView.as_view(), name='availability-blocks'),
+    
+    # 3-step booking process
+    path('booking/step-1/', BookingStepOneView.as_view(), name='booking-step-1'),
+    path('booking/step-2/', BookingStepTwoView.as_view(), name='booking-step-2'),
+    path('booking/step-3/', BookingStepThreeView.as_view(), name='booking-step-3'),
 ]
