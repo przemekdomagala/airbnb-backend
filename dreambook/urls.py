@@ -16,7 +16,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, reverse
 from django.views.generic import RedirectView
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 def api_root(request, format=None):
@@ -27,6 +26,11 @@ def api_root(request, format=None):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # Auth endpoints at root level for frontend compatibility
+    path('', include('accounts.urls')),
+    
+    # API endpoints
     path('api/', include('hosts.urls')),
     path('api/', include('map.urls')),
     path('api/', include('accounts.urls')),
@@ -35,6 +39,8 @@ urlpatterns = [
     path('api/reservations/', include('reservations.urls')),
     path('api/reviews', include('reviews.urls')),
     path('api/', include('user_management.urls')),
+    
+    # Default redirect
     path('', RedirectView.as_view(
         url='/api/reservations/', permanent=False
     )),
