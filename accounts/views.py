@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
 from .forms import CustomUserCreationForm
 from django.contrib.auth import login
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets, filters
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
+from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth import get_user_model, authenticate
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer, AdminUserSerializer, AdminUserCreateSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,6 +16,22 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.exceptions import TokenError
 
 User = get_user_model()
+
+class IsAdminUser(BasePermission):
+    """
+    Custom permission to only allow admin users to access the view.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.role == 'admin'
+        )
+
+class AdminUserPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 def register(request):
     if request.method == "POST":
@@ -146,3 +163,73 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         return self.request.user
+
+class AdminUserViewSet(viewsets.ModelViewSet):
+    """
+    Admin-only API for managing users.
+    Provides CRUD operations for all users.
+    """
+    queryset = User.objects.all()
+    permission_classes = [IsAdminUser]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    ordering_fields = ['date_joined', 'username', 'email']
+    ordering = ['-date_joined']
+    pagination_class = AdminUserPagination
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return AdminUserCreateSerializer
+        return AdminUserSerializer
+
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        """Activate a user account"""
+        user = self.get_object()
+        user.is_active = True
+        user.save()
+        return Response({'status': 'User activated'})
+
+    @action(detail=True, methods=['post'])
+    def deactivate(self, request, pk=None):
+        """Deactivate a user account"""
+        user = self.get_object()
+        user.is_active = False
+        user.save()
+        return Response({'status': 'User deactivated'})
+
+    @action(detail=True, methods=['post'])
+    def change_role(self, request, pk=None):
+        """Change user role"""
+        user = self.get_object()
+        new_role = request.data.get('role')
+        
+        if new_role not in ['guest', 'landlord', 'admin']:
+            return Response({
+                'error': 'Invalid role. Must be guest, landlord, or admin.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.role = new_role
+        user.save()
+        
+        return Response({
+            'status': f'User role changed to {new_role}',
+            'user': AdminUserSerializer(user).data
+        })
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Get user statistics"""
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        role_counts = {}
+        
+        for role, _ in User.ROLE_CHOICES:
+            role_counts[role] = User.objects.filter(role=role).count()
+        
+        return Response({
+            'total_users': total_users,
+            'active_users': active_users,
+            'inactive_users': total_users - active_users,
+            'role_distribution': role_counts
+        })
