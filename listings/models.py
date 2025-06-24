@@ -3,10 +3,20 @@ from django.conf import settings
 
 
 class Listing(models.Model):
+    PROPERTY_TYPE_CHOICES = [
+        ('listing', 'Listing'),
+        ('hotel', 'Hotel'),
+    ]
+    
     title = models.CharField(max_length=200)
     description = models.TextField()
     price_per_night = models.DecimalField(max_digits=10, decimal_places=2)
     location = models.CharField(max_length=255)
+    property_type = models.CharField(
+        max_length=10, 
+        choices=PROPERTY_TYPE_CHOICES, 
+        default='hotel'  # Większość to hotele
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     # New fields
