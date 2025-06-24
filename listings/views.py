@@ -3,6 +3,9 @@ from rest_framework import viewsets
 from .serializers import ListingSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.exceptions import PermissionDenied
 
 
 # API ViewSet
@@ -14,10 +17,15 @@ class ListingViewSet(viewsets.ModelViewSet):
 
     queryset = Listing.objects.all().order_by("-created_at")
     serializer_class = ListingSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         # This will automatically set the owner when creating
-        serializer.save(owner=self.request.user)
+        if self.request.user.is_authenticated:
+            serializer.save(owner=self.request.user)
+        else:
+            raise PermissionDenied("Authentication required to create listings.")
 
     def get_queryset(self):
         """
